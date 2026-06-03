@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>幸运抽奖 - 报名参与</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        
+        /* 头部 */
+        .header {
+            text-align: center;
+            padding: 60px 20px 40px;
+        }
+        
+        .header h1 {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 18px;
+            opacity: 0.8;
+        }
+        
+        /* 内容区 */
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        
+        /* 统计卡片 */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-num {
+            font-size: 48px;
+            font-weight: bold;
+            color: #e94560;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+        
+        /* 报名表单 */
+        .form-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 32px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .form-title {
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 8px;
+            opacity: 0.8;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #e94560;
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .form-group input::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+        
+        /* 按钮 */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(233, 69, 96, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(233, 69, 96, 0.5);
+        }
+        
+        .btn-primary:disabled {
+            background: #555;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* 成功提示 */
+        .success-card {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .success-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        
+        .success-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+        
+        .success-text {
+            font-size: 16px;
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+        
+        .success-code {
+            display: inline-block;
+            background: rgba(233, 69, 96, 0.2);
+            border: 2px solid #e94560;
+            border-radius: 12px;
+            padding: 12px 24px;
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #e94560;
+        }
+        
+        /* 底部 */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            opacity: 0.5;
+            font-size: 12px;
+        }
+        
+        /* 动画 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎉 幸运大抽奖</h1>
+        <p>现场抽奖，公平公开</p>
+    </div>
+    
+    <div class="container">
+        <!-- 统计 -->
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-num" id="participantCount">0</div>
+                <div class="stat-label">已报名</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="prizeCount">0</div>
+                <div class="stat-label">奖品数</div>
+            </div>
+        </div>
+        
+        <!-- 报名表单 -->
+        <div id="joinForm">
+            <div class="form-card">
+                <div class="form-title">📝 填写信息参与抽奖</div>
+                <div class="form-group">
+                    <label>您的姓名</label>
+                    <input type="text" id="userName" placeholder="请输入真实姓名" maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label>手机号（选填）</label>
+                    <input type="tel" id="userPhone" placeholder="用于中奖后联系" maxlength="11">
+                </div>
+                <button class="btn btn-primary pulse" id="joinBtn" onclick="joinDraw()">
+                    🎯 立即报名参与
+                </button>
+            </div>
+        </div>
+        
+        <!-- 报名成功 -->
+        <div id="successCard" style="display:none;">
+            <div class="form-card fade-in">
+                <div class="success-card">
+                    <div class="success-icon">✅</div>
+                    <div class="success-title">报名成功！</div>
+                    <div class="success-text">
+                        您已成功参与本次抽奖<br>
+                        请留意大屏幕，祝您好运！
+                    </div>
+                    <div class="success-code" id="userCode">A001</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>幸运抽奖系统 · 公平公正公开</p>
+    </div>
+
+    <script>
+        // ==================== 数据存储 ====================
+        const Storage = {
+            get(key) {
+                const data = localStorage.getItem('lucky_draw_' + key);
+                return data ? JSON.parse(data) : null;
+            },
+            set(key, value) {
+                localStorage.setItem('lucky_draw_' + key, JSON.stringify(value));
+            }
+        };
+        
+        // ==================== 初始化 ====================
+        function init() {
+            if (!Storage.get('participants')) {
+                Storage.set('participants', []);
+            }
+            if (!Storage.get('winners')) {
+                Storage.set('winners', []);
+            }
+            if (!Storage.get('prizes')) {
+                Storage.set('prizes', [
+                    { id: 1, name: '🎁 一等奖', count: 1 },
+                    { id: 2, name: '🥈 二等奖', count: 3 },
+                    { id: 3, name: '🥉 三等奖', count: 5 }
+                ]);
+            }
+            updateStats();
+            checkJoined();
+        }
+        
+        // ==================== 更新统计 ====================
+        function updateStats() {
+            const participants = Storage.get('participants') || [];
+            const prizes = Storage.get('prizes') || [];
+            document.getElementById('participantCount').textContent = participants.length;
+            const totalPrizes = prizes.reduce((sum, p) => sum + (parseInt(p.count) || 0), 0);
+            document.getElementById('prizeCount').textContent = totalPrizes;
+        }
+        
+        // ==================== 检查是否已报名 ====================
+        function checkJoined() {
+            const deviceId = getDeviceId();
+            const participants = Storage.get('participants') || [];
+            const joined = participants.find(p => p.deviceId === deviceId);
+            
+            if (joined) {
+                showSuccess(joined.code);
+            }
+        }
+        
+        // ==================== 获取设备ID ====================
+        function getDeviceId() {
+            let id = Storage.get('deviceId');
+            if (!id) {
+                id = 'D' + Date.now() + Math.random().toString(36).substr(2, 6).toUpperCase();
+                Storage.set('deviceId', id);
+            }
+            return id;
+        }
+        
+        // ==================== 生成报名码 ====================
+        function generateCode() {
+            const participants = Storage.get('participants') || [];
+            const num = participants.length + 1;
+            return 'A' + String(num).padStart(3, '0');
+        }
+        
+        // ==================== 报名参与 ====================
+        function joinDraw() {
+            const name = document.getElementById('userName').value.trim();
+            const phone = document.getElementById('userPhone').value.trim();
+            
+            if (!name) {
+                alert('请输入您的姓名！');
+                return;
+            }
+            
+            const deviceId = getDeviceId();
+            const participants = Storage.get('participants') || [];
+            
+            // 检查是否已报名
+            if (participants.find(p => p.deviceId === deviceId)) {
+                alert('您已经报名过了！');
+                return;
+            }
+            
+            // 生成报名码
+            const code = generateCode();
+            
+            // 添加参与者
+            const participant = {
+                id: Date.now(),
+                deviceId,
+                code,
+                name,
+                phone,
+                joinedAt: new Date().toISOString()
+            };
+            
+            participants.push(participant);
+            Storage.set('participants', participants);
+            
+            // 显示成功
+            showSuccess(code);
+            updateStats();
+        }
+        
+        // ==================== 显示成功页面 ====================
+        function showSuccess(code) {
+            document.getElementById('joinForm').style.display = 'none';
+            document.getElementById('successCard').style.display = 'block';
+            document.getElementById('userCode').textContent = code;
+        }
+        
+        // ==================== 初始化 ====================
+        init();
+        
+        // 定时更新统计（从其他页面同步）
+        setInterval(updateStats, 2000);
+    </script>
+</body>
+</html>
