@@ -4,13 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>幸运大抽奖 - 大屏幕</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
@@ -18,8 +14,6 @@
             color: #fff;
             overflow: hidden;
         }
-        
-        /* 顶部信息栏 */
         .top-bar {
             display: flex;
             justify-content: space-between;
@@ -27,33 +21,11 @@
             padding: 20px 40px;
             background: rgba(0,0,0,0.3);
         }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        
-        .stats-bar {
-            display: flex;
-            gap: 30px;
-        }
-        
-        .stat {
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 28px;
-            font-weight: bold;
-            color: #e94560;
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            opacity: 0.7;
-        }
-        
-        /* 主内容区 */
+        .logo { font-size: 24px; font-weight: bold; }
+        .stats-bar { display: flex; gap: 30px; }
+        .stat { text-align: center; }
+        .stat-value { font-size: 28px; font-weight: bold; color: #e94560; }
+        .stat-label { font-size: 12px; opacity: 0.7; }
         .main {
             display: flex;
             flex-direction: column;
@@ -62,22 +34,8 @@
             min-height: calc(100vh - 80px);
             padding: 40px;
         }
-        
-        /* 标题 */
-        .main-title {
-            font-size: 48px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-        
-        .sub-title {
-            font-size: 20px;
-            opacity: 0.8;
-            margin-bottom: 60px;
-        }
-        
-        /* 滚动显示区 */
+        .main-title { font-size: 48px; font-weight: bold; margin-bottom: 20px; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .sub-title { font-size: 20px; opacity: 0.8; margin-bottom: 60px; }
         .rolling-area {
             width: 100%;
             max-width: 800px;
@@ -92,24 +50,14 @@
             position: relative;
             overflow: hidden;
         }
-        
         .rolling-area::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, 
-                rgba(26,26,46,1) 0%, 
-                transparent 20%, 
-                transparent 80%, 
-                rgba(26,26,46,1) 100%
-            );
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, rgba(26,26,46,1) 0%, transparent 20%, transparent 80%, rgba(26,26,46,1) 100%);
             pointer-events: none;
             z-index: 2;
         }
-        
         .rolling-name {
             font-size: 72px;
             font-weight: bold;
@@ -117,64 +65,26 @@
             text-shadow: 0 0 40px rgba(233, 69, 96, 0.6);
             transition: all 0.1s;
         }
-        
         .rolling-name.stopped {
             color: #ffd700;
             text-shadow: 0 0 60px rgba(255, 215, 0, 0.8);
             transform: scale(1.2);
         }
-        
-        /* 中奖结果展示 */
         .winner-display {
             display: none;
             text-align: center;
             animation: winnerShow 0.8s ease;
         }
-        
-        .winner-display.show {
-            display: block;
-        }
-        
+        .winner-display.show { display: block; }
         @keyframes winnerShow {
-            0% {
-                transform: scale(0) rotate(-10deg);
-                opacity: 0;
-            }
-            50% {
-                transform: scale(1.1) rotate(2deg);
-            }
-            100% {
-                transform: scale(1) rotate(0);
-                opacity: 1;
-            }
+            0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+            50% { transform: scale(1.1) rotate(2deg); }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
         }
-        
-        .winner-label {
-            font-size: 24px;
-            opacity: 0.8;
-            margin-bottom: 16px;
-        }
-        
-        .winner-name {
-            font-size: 80px;
-            font-weight: bold;
-            color: #ffd700;
-            text-shadow: 0 0 60px rgba(255, 215, 0, 0.8);
-            margin-bottom: 16px;
-        }
-        
-        .winner-code {
-            font-size: 36px;
-            color: #e94560;
-        }
-        
-        /* 控制按钮 */
-        .controls {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-        
+        .winner-label { font-size: 24px; opacity: 0.8; margin-bottom: 16px; }
+        .winner-name { font-size: 80px; font-weight: bold; color: #ffd700; text-shadow: 0 0 60px rgba(255, 215, 0, 0.8); margin-bottom: 16px; }
+        .winner-code { font-size: 36px; color: #e94560; }
+        .controls { display: flex; gap: 20px; margin-bottom: 40px; }
         .btn {
             padding: 20px 60px;
             border: none;
@@ -184,45 +94,20 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        
         .btn-start {
             background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
             color: #fff;
             box-shadow: 0 8px 32px rgba(233, 69, 96, 0.5);
         }
-        
-        .btn-start:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(233, 69, 96, 0.6);
-        }
-        
+        .btn-start:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(233, 69, 96, 0.6); }
         .btn-stop {
             background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
             color: #333;
             box-shadow: 0 8px 32px rgba(255, 215, 0, 0.5);
         }
-        
-        .btn-stop:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(255, 215, 0, 0.6);
-        }
-        
-        .btn:disabled {
-            background: #555;
-            color: #999;
-            box-shadow: none;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        /* 奖品信息 */
-        .prize-info {
-            font-size: 28px;
-            color: #ffd700;
-            margin-bottom: 20px;
-        }
-        
-        /* 中奖名单 */
+        .btn-stop:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(255, 215, 0, 0.6); }
+        .btn:disabled { background: #555; color: #999; box-shadow: none; cursor: not-allowed; transform: none; }
+        .prize-info { font-size: 28px; color: #ffd700; margin-bottom: 20px; }
         .winners-list {
             position: fixed;
             right: 20px;
@@ -234,13 +119,7 @@
             padding: 20px;
             overflow-y: auto;
         }
-        
-        .winners-list h3 {
-            font-size: 16px;
-            margin-bottom: 12px;
-            color: #ffd700;
-        }
-        
+        .winners-list h3 { font-size: 16px; margin-bottom: 12px; color: #ffd700; }
         .winner-tag {
             display: flex;
             justify-content: space-between;
@@ -251,17 +130,8 @@
             margin-bottom: 8px;
             font-size: 14px;
         }
-        
-        .winner-tag .name {
-            font-weight: bold;
-        }
-        
-        .winner-tag .prize {
-            color: #ffd700;
-            font-size: 12px;
-        }
-        
-        /* 设置面板 */
+        .winner-tag .name { font-weight: bold; }
+        .winner-tag .prize { color: #ffd700; font-size: 12px; }
         .settings-btn {
             position: fixed;
             bottom: 20px;
@@ -274,72 +144,38 @@
             cursor: pointer;
             font-size: 14px;
         }
-        
-        .settings-btn:hover {
-            background: rgba(255,255,255,0.2);
-        }
-        
-        /* 设置弹窗 */
+        .settings-btn:hover { background: rgba(255,255,255,0.2); }
         .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.8);
             z-index: 1000;
             align-items: center;
             justify-content: center;
         }
-        
-        .modal.show {
-            display: flex;
-        }
-        
+        .modal.show { display: flex; }
         .modal-content {
             background: #1a1a2e;
             border-radius: 20px;
             padding: 32px;
             width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
+            max-width: 600px;
+            max-height: 85vh;
             overflow-y: auto;
             border: 1px solid rgba(255,255,255,0.1);
         }
-        
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
         }
-        
-        .modal-header h3 {
-            font-size: 20px;
-        }
-        
-        .btn-close {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 24px;
-            cursor: pointer;
-        }
-        
-        .form-group {
-            margin-bottom: 16px;
-        }
-        
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            margin-bottom: 8px;
-            opacity: 0.8;
-        }
-        
-        .form-group input,
-        .form-group select {
+        .modal-header h3 { font-size: 20px; }
+        .btn-close { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 14px; margin-bottom: 8px; opacity: 0.8; }
+        .form-group input, .form-group select {
             width: 100%;
             padding: 12px;
             border: 1px solid rgba(255,255,255,0.2);
@@ -348,46 +184,13 @@
             color: #fff;
             font-size: 14px;
         }
-        
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #e94560;
-        }
-        
-        .prize-form {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-        
-        .prize-form input {
-            flex: 1;
-        }
-        
-        .prize-form input[type="number"] {
-            width: 80px;
-            flex: none;
-        }
-        
-        .btn-small {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            font-size: 13px;
-            cursor: pointer;
-        }
-        
-        .btn-add {
-            background: #e94560;
-            color: #fff;
-        }
-        
-        .btn-danger {
-            background: #ff4d4f;
-            color: #fff;
-        }
-        
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #e94560; }
+        .prize-form { display: flex; gap: 8px; margin-bottom: 12px; }
+        .prize-form input { flex: 1; }
+        .prize-form input[type="number"] { width: 80px; flex: none; }
+        .btn-small { padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
+        .btn-add { background: #e94560; color: #fff; }
+        .btn-danger { background: #ff4d4f; color: #fff; }
         .prize-item-admin {
             display: flex;
             justify-content: space-between;
@@ -398,25 +201,25 @@
             margin-bottom: 8px;
             font-size: 14px;
         }
-        
-        /* 空状态 */
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            opacity: 0.5;
+        .round-list { margin-bottom: 16px; }
+        .round-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
         }
-        
-        /* 动画 */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .pulse {
-            animation: pulse 1s infinite;
-        }
-        
-        /* 彩带效果 */
+        .round-item:hover { background: rgba(255,255,255,0.1); }
+        .round-item.active { border: 2px solid #e94560; }
+        .round-item .name { font-weight: bold; }
+        .round-item .status { font-size: 12px; opacity: 0.7; }
+        .empty-state { text-align: center; padding: 40px; opacity: 0.5; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .pulse { animation: pulse 1s infinite; }
         .confetti {
             position: fixed;
             width: 10px;
@@ -424,21 +227,26 @@
             top: -10px;
             animation: confetti-fall 3s linear forwards;
         }
-        
         @keyframes confetti-fall {
-            0% {
-                transform: translateY(0) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(100vh) rotate(720deg);
-                opacity: 0;
-            }
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
+        .tab-bar { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .tab.active { background: #e94560; }
+        .tab-content { display: none; }
+        .tab-content.show { display: block; }
     </style>
 </head>
 <body>
-    <!-- 顶部栏 -->
     <div class="top-bar">
         <div class="logo">🎉 幸运大抽奖</div>
         <div class="stats-bar">
@@ -457,34 +265,28 @@
         </div>
     </div>
     
-    <!-- 主内容 -->
     <div class="main">
         <div class="main-title">🎊 幸运大抽奖</div>
         <div class="sub-title" id="currentPrize">准备抽取奖品...</div>
         
-        <!-- 滚动显示区 -->
         <div class="rolling-area" id="rollingArea">
             <div class="rolling-name" id="rollingName">???</div>
         </div>
         
-        <!-- 中奖结果 -->
         <div class="winner-display" id="winnerDisplay">
             <div class="winner-label">🎉 恭喜中奖 🎉</div>
             <div class="winner-name" id="winnerName">-</div>
             <div class="winner-code" id="winnerCode">-</div>
         </div>
         
-        <!-- 控制按钮 -->
         <div class="controls" id="controls">
             <button class="btn btn-start" id="startBtn" onclick="startRolling()">▶ 开始滚动</button>
             <button class="btn btn-stop" id="stopBtn" onclick="stopRolling()" disabled>⏹ 停止抽奖</button>
         </div>
         
-        <!-- 奖品信息 -->
         <div class="prize-info" id="prizeInfo"></div>
     </div>
     
-    <!-- 中奖名单 -->
     <div class="winners-list" id="winnersList">
         <h3>🏆 中奖名单</h3>
         <div id="winnersListContent">
@@ -492,249 +294,318 @@
         </div>
     </div>
     
-    <!-- 设置按钮 -->
     <button class="settings-btn" onclick="showSettings()">⚙️ 设置</button>
     
-    <!-- 设置弹窗 -->
     <div class="modal" id="settingsModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>⚙️ 抽奖设置</h3>
                 <button class="btn-close" onclick="closeSettings()">&times;</button>
             </div>
-            <div class="form-group">
-                <label>当前抽取奖品</label>
-                <select id="selectPrize" onchange="changePrize()">
-                    <option value="">请选择奖品</option>
-                </select>
+            
+            <div class="tab-bar">
+                <button class="tab active" onclick="switchTab('rounds')">轮次管理</button>
+                <button class="tab" onclick="switchTab('prizes')">奖品设置</button>
+                <button class="tab" onclick="switchTab('data')">数据管理</button>
             </div>
-            <div class="form-group">
-                <label>添加奖品</label>
-                <div class="prize-form">
-                    <input type="text" id="newPrizeName" placeholder="奖品名称">
-                    <input type="number" id="newPrizeCount" placeholder="数量" min="1" value="1">
-                    <button class="btn-small btn-add" onclick="addPrize()">添加</button>
+            
+            <div class="tab-content show" id="tab-rounds">
+                <div class="form-group">
+                    <label>创建新轮次</label>
+                    <input type="text" id="newRoundName" placeholder="轮次名称（如：第二轮）">
                 </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="excludeWinners"> 排除已中奖者
+                    </label>
+                </div>
+                <button class="btn btn-add" style="width:100%;margin-bottom:16px;" onclick="createRound()">创建轮次</button>
+                
+                <div class="round-list" id="roundList"></div>
             </div>
-            <div id="prizesListAdmin"></div>
-            <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:20px 0;">
-            <button class="btn btn-danger" style="width:100%;" onclick="resetAll()">重置所有数据</button>
+            
+            <div class="tab-content" id="tab-prizes">
+                <div class="form-group">
+                    <label>当前轮次</label>
+                    <select id="prizeRoundSelect" onchange="loadPrizesForRound()"></select>
+                </div>
+                <div class="form-group">
+                    <label>添加奖品</label>
+                    <div class="prize-form">
+                        <input type="text" id="newPrizeName" placeholder="奖品名称">
+                        <input type="number" id="newPrizeCount" placeholder="数量" min="1" value="1">
+                        <button class="btn-small btn-add" onclick="addPrize()">添加</button>
+                    </div>
+                </div>
+                <div id="prizesListAdmin"></div>
+            </div>
+            
+            <div class="tab-content" id="tab-data">
+                <div class="form-group">
+                    <label>统计信息</label>
+                    <div style="background:rgba(255,255,255,0.05);padding:16px;border-radius:8px;">
+                        <p>总轮次数: <span id="statRounds">0</span></p>
+                        <p>总参与人数: <span id="statTotalParticipants">0</span></p>
+                        <p>总中奖人数: <span id="statTotalWinners">0</span></p>
+                    </div>
+                </div>
+                <button class="btn btn-danger" style="width:100%;" onclick="exportData()">导出数据</button>
+                <button class="btn btn-danger" style="width:100%;margin-top:8px;background:#ff4d4f;" onclick="resetAll()">⚠️ 重置所有数据</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // ==================== 数据存储 ====================
-        const Storage = {
-            get(key) {
-                const data = localStorage.getItem('lucky_draw_' + key);
-                return data ? JSON.parse(data) : null;
-            },
-            set(key, value) {
-                localStorage.setItem('lucky_draw_' + key, JSON.stringify(value));
-            }
-        };
+        // ==================== Supabase 配置（需要替换） ====================
+        const SUPABASE_URL = 'https://ygtkvdnholbveneqnnqs.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_SHIIuCLyOprII4194oE0Rg_SbtTfmFs';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
         // ==================== 全局状态 ====================
         let isRolling = false;
         let rollInterval = null;
-        let currentPrizeId = null;
-        let selectedWinner = null;
+        let currentRound = null;
+        let currentParticipants = [];
+        let currentPrizes = [];
+        let selectedPrize = null;
         
         // ==================== 初始化 ====================
-        function init() {
-            if (!Storage.get('participants')) {
-                Storage.set('participants', []);
-            }
-            if (!Storage.get('winners')) {
-                Storage.set('winners', []);
-            }
-            if (!Storage.get('prizes')) {
-                Storage.set('prizes', [
-                    { id: 1, name: '🎁 一等奖', count: 1, drawn: 0 },
-                    { id: 2, name: '🥈 二等奖', count: 3, drawn: 0 },
-                    { id: 3, name: '🥉 三等奖', count: 5, drawn: 0 }
-                ]);
-            }
+        async function init() {
+            await loadCurrentRound();
+            await loadParticipants();
+            await loadWinners();
             updateStats();
-            updateWinnersList();
-            updatePrizeSelect();
+        }
+        
+        // ==================== 加载当前轮次 ====================
+        async function loadCurrentRound() {
+            try {
+                const { data: rounds, error } = await supabase
+                    .from('rounds')
+                    .select('*')
+                    .neq('status', 'finished')
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+                
+                if (error) throw error;
+                
+                if (rounds && rounds.length > 0) {
+                    currentRound = rounds[0];
+                    document.getElementById('currentPrize').textContent = `当前轮次: ${currentRound.name}`;
+                    
+                    // 加载奖品
+                    const { data: prizes } = await supabase
+                        .from('prizes')
+                        .select('*')
+                        .eq('round_id', currentRound.id)
+                        .order('sort_order', { ascending: true });
+                    
+                    currentPrizes = prizes || [];
+                    
+                    // 自动选择第一个未抽完的奖品
+                    const availablePrize = currentPrizes.find(p => p.drawn < p.count);
+                    if (availablePrize) {
+                        selectedPrize = availablePrize;
+                        document.getElementById('currentPrize').textContent = `正在抽取: ${availablePrize.name}`;
+                    }
+                } else {
+                    document.getElementById('currentPrize').textContent = '暂无进行中的轮次';
+                }
+            } catch (err) {
+                console.error('加载轮次失败:', err);
+            }
+        }
+        
+        // ==================== 加载参与者 ====================
+        async function loadParticipants() {
+            if (!currentRound) return;
+            
+            try {
+                const { data, error } = await supabase
+                    .from('round_participants')
+                    .select('*, participants(*)')
+                    .eq('round_id', currentRound.id);
+                
+                if (error) throw error;
+                currentParticipants = data || [];
+            } catch (err) {
+                console.error('加载参与者失败:', err);
+            }
+        }
+        
+        // ==================== 加载中奖者 ====================
+        async function loadWinners() {
+            if (!currentRound) return;
+            
+            try {
+                const { data, error } = await supabase
+                    .from('winners')
+                    .select('*')
+                    .eq('round_id', currentRound.id)
+                    .order('drawn_at', { ascending: false });
+                
+                if (error) throw error;
+                updateWinnersList(data || []);
+            } catch (err) {
+                console.error('加载中奖者失败:', err);
+            }
         }
         
         // ==================== 更新统计 ====================
-        function updateStats() {
-            const participants = Storage.get('participants') || [];
-            const winners = Storage.get('winners') || [];
-            const prizes = Storage.get('prizes') || [];
-            
-            document.getElementById('totalParticipants').textContent = participants.length;
-            document.getElementById('totalWinners').textContent = winners.length;
-            
-            const remaining = prizes.reduce((sum, p) => sum + ((parseInt(p.count) || 0) - (parseInt(p.drawn) || 0)), 0);
-            document.getElementById('remainingPrizes').textContent = remaining;
-        }
-        
-        // ==================== 更新奖品选择 ====================
-        function updatePrizeSelect() {
-            const prizes = Storage.get('prizes') || [];
-            const select = document.getElementById('selectPrize');
-            const currentValue = select.value;
-            
-            select.innerHTML = '<option value="">请选择奖品</option>' +
-                prizes.filter(p => p.drawn < p.count).map(p => 
-                    `<option value="${p.id}">${p.name} (剩余 ${p.count - p.drawn}/${p.count})</option>`
-                ).join('');
-            
-            if (currentValue) select.value = currentValue;
-            
-            // 更新奖品列表
-            document.getElementById('prizesListAdmin').innerHTML = prizes.map(p => `
-                <div class="prize-item-admin">
-                    <span>${p.name} (${p.drawn}/${p.count})</span>
-                    <button class="btn-small btn-danger" onclick="deletePrize(${p.id})">删除</button>
-                </div>
-            `).join('');
-        }
-        
-        // ==================== 改变当前奖品 ====================
-        function changePrize() {
-            const prizeId = parseInt(document.getElementById('selectPrize').value);
-            if (!prizeId) {
-                currentPrizeId = null;
-                document.getElementById('currentPrize').textContent = '准备抽取奖品...';
-                return;
-            }
-            
-            const prizes = Storage.get('prizes') || [];
-            const prize = prizes.find(p => p.id === prizeId);
-            if (prize) {
-                currentPrizeId = prizeId;
-                document.getElementById('currentPrize').textContent = `正在抽取：${prize.name}`;
+        async function updateStats() {
+            try {
+                // 报名人数
+                const { count: pCount } = await supabase
+                    .from('round_participants')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('round_id', currentRound?.id || 0);
+                
+                document.getElementById('totalParticipants').textContent = pCount || 0;
+                
+                // 中奖人数
+                const { count: wCount } = await supabase
+                    .from('winners')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('round_id', currentRound?.id || 0);
+                
+                document.getElementById('totalWinners').textContent = wCount || 0;
+                
+                // 剩余奖品
+                const remaining = currentPrizes.reduce((sum, p) => sum + (p.count - p.drawn), 0);
+                document.getElementById('remainingPrizes').textContent = remaining;
+                
+            } catch (err) {
+                console.error('更新统计失败:', err);
             }
         }
         
         // ==================== 开始滚动 ====================
-        function startRolling() {
-            const participants = Storage.get('participants') || [];
-            const winners = Storage.get('winners') || [];
-            
-            // 检查是否有奖品
-            if (!currentPrizeId) {
-                alert('请先选择要抽取的奖品！\n点击左下角"设置"选择奖品');
+        async function startRolling() {
+            if (!currentRound) {
+                alert('请先创建轮次！');
                 return;
             }
             
-            // 检查是否还有剩余
-            const prizes = Storage.get('prizes') || [];
-            const prize = prizes.find(p => p.id === currentPrizeId);
-            if (!prize || prize.drawn >= prize.count) {
-                alert('该奖品已抽完！');
+            if (!selectedPrize || selectedPrize.drawn >= selectedPrize.count) {
+                alert('请先在设置中选择奖品！');
+                showSettings();
                 return;
             }
+            
+            // 重新加载参与者
+            await loadParticipants();
             
             // 获取未中奖的参与者
-            const available = participants.filter(p => 
-                !winners.some(w => w.participantId === p.id)
-            );
+            const { data: winners } = await supabase
+                .from('winners')
+                .select('participant_id')
+                .eq('round_id', currentRound.id);
+            
+            const winnerIds = (winners || []).map(w => w.participant_id);
+            const available = currentParticipants.filter(p => !winnerIds.includes(p.participant_id));
             
             if (available.length === 0) {
-                alert('没有可抽奖的参与者！\n请让更多人扫码报名。');
+                alert('没有可抽奖的参与者！');
                 return;
             }
             
             isRolling = true;
-            selectedWinner = null;
             
-            // 隐藏结果，显示滚动
             document.getElementById('winnerDisplay').classList.remove('show');
             document.getElementById('rollingArea').style.display = 'flex';
             document.getElementById('rollingName').classList.remove('stopped');
-            
-            // 按钮状态
             document.getElementById('startBtn').disabled = true;
             document.getElementById('stopBtn').disabled = false;
             
-            // 开始滚动
             let index = 0;
             rollInterval = setInterval(() => {
-                const name = available[index % available.length].name;
+                const name = available[index % available.length].participants.name;
                 document.getElementById('rollingName').textContent = name;
                 index++;
             }, 80);
         }
         
         // ==================== 停止滚动 ====================
-        function stopRolling() {
+        async function stopRolling() {
             if (!isRolling) return;
             
             isRolling = false;
             clearInterval(rollInterval);
             
-            const participants = Storage.get('participants') || [];
-            const winners = Storage.get('winners') || [];
-            const prizes = Storage.get('prizes') || [];
-            
             // 获取未中奖的参与者
-            const available = participants.filter(p => 
-                !winners.some(w => w.participantId === p.id)
-            );
+            const { data: winners } = await supabase
+                .from('winners')
+                .select('participant_id')
+                .eq('round_id', currentRound.id);
+            
+            const winnerIds = (winners || []).map(w => w.participant_id);
+            const available = currentParticipants.filter(p => !winnerIds.includes(p.participant_id));
             
             if (available.length === 0) return;
             
-            // 随机选择中奖者
+            // 随机选择
             const winnerIndex = Math.floor(Math.random() * available.length);
-            selectedWinner = available[winnerIndex];
+            const selected = available[winnerIndex];
             
-            // 显示结果
             document.getElementById('rollingName').classList.add('stopped');
-            document.getElementById('rollingName').textContent = selectedWinner.name;
+            document.getElementById('rollingName').textContent = selected.participants.name;
             
-            setTimeout(() => {
+            setTimeout(async () => {
                 document.getElementById('rollingArea').style.display = 'none';
                 document.getElementById('winnerDisplay').classList.add('show');
-                document.getElementById('winnerName').textContent = selectedWinner.name;
-                document.getElementById('winnerCode').textContent = '编号: ' + selectedWinner.code;
+                document.getElementById('winnerName').textContent = selected.participants.name;
+                document.getElementById('winnerCode').textContent = '编号: ' + selected.participants.code;
                 
-                // 彩带效果
                 createConfetti();
                 
-                // 记录中奖
-                const prize = prizes.find(p => p.id === currentPrizeId);
-                winners.push({
-                    id: Date.now(),
-                    participantId: selectedWinner.id,
-                    name: selectedWinner.name,
-                    code: selectedWinner.code,
-                    prizeId: currentPrizeId,
-                    prizeName: prize ? prize.name : '',
-                    drawnAt: new Date().toISOString()
+                // 保存中奖记录
+                await supabase.from('winners').insert({
+                    round_id: currentRound.id,
+                    participant_id: selected.participant_id,
+                    name: selected.participants.name,
+                    code: selected.participants.code,
+                    prize_id: selectedPrize.id,
+                    prize_name: selectedPrize.name
                 });
                 
                 // 更新奖品已抽数量
-                if (prize) {
-                    prize.drawn++;
+                await supabase
+                    .from('prizes')
+                    .update({ drawn: selectedPrize.drawn + 1 })
+                    .eq('id', selectedPrize.id);
+                
+                // 标记参与者已中奖
+                await supabase
+                    .from('participants')
+                    .update({ has_won: true })
+                    .eq('id', selected.participant_id);
+                
+                // 更新当前奖品
+                selectedPrize.drawn++;
+                
+                // 检查是否还有剩余
+                if (selectedPrize.drawn >= selectedPrize.count) {
+                    const nextPrize = currentPrizes.find(p => p.drawn < p.count);
+                    if (nextPrize) {
+                        selectedPrize = nextPrize;
+                        document.getElementById('currentPrize').textContent = `正在抽取: ${nextPrize.name}`;
+                    } else {
+                        document.getElementById('currentPrize').textContent = '所有奖品已抽完！';
+                        selectedPrize = null;
+                    }
                 }
                 
-                Storage.set('winners', winners);
-                Storage.set('prizes', prizes);
+                await loadWinners();
+                await updateStats();
                 
-                updateStats();
-                updateWinnersList();
-                updatePrizeSelect();
-                
-                // 按钮状态
                 document.getElementById('startBtn').disabled = false;
                 document.getElementById('stopBtn').disabled = true;
                 
-                // 检查是否还有剩余
-                if (prize && prize.drawn >= prize.count) {
-                    document.getElementById('currentPrize').textContent = `${prize.name} 已抽完！`;
-                    currentPrizeId = null;
-                    document.getElementById('selectPrize').value = '';
-                }
             }, 500);
         }
         
-        // ==================== 彩带效果 ====================
+        // ==================== 彩带特效 ====================
         function createConfetti() {
             const colors = ['#e94560', '#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4'];
             for (let i = 0; i < 50; i++) {
@@ -748,29 +619,25 @@
                     confetti.style.height = (Math.random() * 10 + 5) + 'px';
                     confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
                     document.body.appendChild(confetti);
-                    
                     setTimeout(() => confetti.remove(), 4000);
                 }, i * 30);
             }
         }
         
         // ==================== 更新中奖名单 ====================
-        function updateWinnersList() {
-            const winners = Storage.get('winners') || [];
+        function updateWinnersList(winners) {
             const content = document.getElementById('winnersListContent');
-            
             if (winners.length === 0) {
                 content.innerHTML = '<div class="empty-state">暂无中奖者</div>';
                 return;
             }
-            
-            content.innerHTML = winners.slice().reverse().map(w => `
+            content.innerHTML = winners.map(w => `
                 <div class="winner-tag">
                     <div>
                         <div class="name">${w.name}</div>
                         <div style="font-size:11px;opacity:0.6;">${w.code}</div>
                     </div>
-                    <div class="prize">${w.prizeName}</div>
+                    <div class="prize">${w.prize_name}</div>
                 </div>
             `).join('');
         }
@@ -778,95 +645,346 @@
         // ==================== 设置面板 ====================
         function showSettings() {
             document.getElementById('settingsModal').classList.add('show');
-            updatePrizeSelect();
+            loadRoundsList();
+            loadPrizeRoundSelect();
+            loadPrizesForRound();
+            updateDataStats();
         }
         
         function closeSettings() {
             document.getElementById('settingsModal').classList.remove('show');
         }
         
-        function addPrize() {
-            const name = document.getElementById('newPrizeName').value.trim();
-            const count = parseInt(document.getElementById('newPrizeCount').value) || 1;
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('show'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('show');
+        }
+        
+        // ==================== 轮次管理 ====================
+        async function loadRoundsList() {
+            try {
+                const { data, error } = await supabase
+                    .from('rounds')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                const list = document.getElementById('roundList');
+                if (!data || data.length === 0) {
+                    list.innerHTML = '<div class="empty-state">暂无轮次</div>';
+                    return;
+                }
+                
+                list.innerHTML = data.map(r => {
+                    const statusMap = { joining: '报名中', drawing: '抽奖中', finished: '已结束' };
+                    const isActive = currentRound && r.id === currentRound.id;
+                    return `
+                        <div class="round-item ${isActive ? 'active' : ''}" onclick="selectRound(${r.id})">
+                            <div>
+                                <div class="name">${r.name}</div>
+                                <div class="status">${statusMap[r.status] || r.status}</div>
+                            </div>
+                            ${r.exclude_previous_winners ? '<span style="font-size:12px;color:#e94560;">排除已中奖</span>' : ''}
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (err) {
+                console.error('加载轮次失败:', err);
+            }
+        }
+        
+        async function createRound() {
+            const name = document.getElementById('newRoundName').value.trim();
+            const excludeWinners = document.getElementById('excludeWinners').checked;
             
             if (!name) {
-                alert('请输入奖品名称');
+                alert('请输入轮次名称');
                 return;
             }
             
-            const prizes = Storage.get('prizes') || [];
-            prizes.push({
-                id: Date.now(),
-                name,
-                count,
-                drawn: 0
-            });
-            
-            Storage.set('prizes', prizes);
-            document.getElementById('newPrizeName').value = '';
-            document.getElementById('newPrizeCount').value = '1';
-            updatePrizeSelect();
-            updateStats();
-        }
-        
-        function deletePrize(id) {
-            if (!confirm('确定删除这个奖品吗？')) return;
-            const prizes = Storage.get('prizes') || [];
-            Storage.set('prizes', prizes.filter(p => p.id !== id));
-            updatePrizeSelect();
-            updateStats();
-        }
-        
-        function resetAll() {
-            if (!confirm('确定要重置所有数据吗？所有报名记录和中奖记录将被清空！')) return;
-            if (!confirm('再次确认：此操作不可恢复！')) return;
-            
-            Storage.set('participants', []);
-            Storage.set('winners', []);
-            Storage.set('prizes', [
-                { id: 1, name: '🎁 一等奖', count: 1, drawn: 0 },
-                { id: 2, name: '🥈 二等奖', count: 3, drawn: 0 },
-                { id: 3, name: '🥉 三等奖', count: 5, drawn: 0 }
-            ]);
-            
-            currentPrizeId = null;
-            updateStats();
-            updateWinnersList();
-            updatePrizeSelect();
-            document.getElementById('currentPrize').textContent = '准备抽取奖品...';
-            document.getElementById('winnerDisplay').classList.remove('show');
-            document.getElementById('rollingArea').style.display = 'flex';
-            document.getElementById('rollingName').textContent = '???';
-            
-            alert('数据已重置！');
-        }
-        
-        // ==================== 键盘快捷键 ====================
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                if (isRolling) {
-                    stopRolling();
-                } else {
-                    startRolling();
+            try {
+                // 结束当前轮次
+                if (currentRound) {
+                    await supabase
+                        .from('rounds')
+                        .update({ status: 'finished' })
+                        .eq('id', currentRound.id);
                 }
+                
+                // 创建新轮次
+                const { data, error } = await supabase
+                    .from('rounds')
+                    .insert({
+                        name: name,
+                        status: 'joining',
+                        exclude_previous_winners: excludeWinners
+                    })
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                currentRound = data;
+                
+                // 添加默认奖品
+                await supabase.from('prizes').insert([
+                    { round_id: data.id, name: '🎁 特等奖', count: 1, sort_order: 1 },
+                    { round_id: data.id, name: '🥇 一等奖', count: 3, sort_order: 2 },
+                    { round_id: data.id, name: '🥈 二等奖', count: 5, sort_order: 3 }
+                ]);
+                
+                document.getElementById('newRoundName').value = '';
+                document.getElementById('excludeWinners').checked = false;
+                
+                alert('轮次创建成功！');
+                await loadCurrentRound();
+                loadRoundsList();
+                loadPrizeRoundSelect();
+                loadPrizesForRound();
+                updateStats();
+                
+            } catch (err) {
+                console.error('创建轮次失败:', err);
+                alert('创建失败，请重试');
             }
-        });
+        }
         
-        // ==================== 定时同步 ====================
-        setInterval(() => {
-            updateStats();
-            updateWinnersList();
-        }, 2000);
+        async function selectRound(roundId) {
+            try {
+                const { data, error } = await supabase
+                    .from('rounds')
+                    .select('*')
+                    .eq('id', roundId)
+                    .single();
+                
+                if (error) throw error;
+                
+                currentRound = data;
+                await loadCurrentRound();
+                await loadParticipants();
+                await loadWinners();
+                updateStats();
+                loadRoundsList();
+                
+                alert(`已切换到: ${data.name}`);
+                
+            } catch (err) {
+                console.error('选择轮次失败:', err);
+            }
+        }
+        
+        // ==================== 奖品管理 ====================
+        async function loadPrizeRoundSelect() {
+            try {
+                const { data, error } = await supabase
+                    .from('rounds')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                const select = document.getElementById('prizeRoundSelect');
+                select.innerHTML = (data || []).map(r => 
+                    `<option value="${r.id}" ${currentRound && r.id === currentRound.id ? 'selected' : ''}>${r.name}</option>`
+                ).join('');
+                
+            } catch (err) {
+                console.error('加载轮次选择失败:', err);
+            }
+        }
+        
+        async function loadPrizesForRound() {
+            const roundId = parseInt(document.getElementById('prizeRoundSelect').value);
+            if (!roundId) return;
+            
+            try {
+                const { data, error } = await supabase
+                    .from('prizes')
+                    .select('*')
+                    .eq('round_id', roundId)
+                    .order('sort_order', { ascending: true });
+                
+                if (error) throw error;
+                
+                const list = document.getElementById('prizesListAdmin');
+                if (!data || data.length === 0) {
+                    list.innerHTML = '<div class="empty-state">暂无奖品</div>';
+                    return;
+                }
+                
+                list.innerHTML = data.map(p => `
+                    <div class="prize-item-admin">
+                        <span>${p.name} (${p.drawn}/${p.count})</span>
+                        <button class="btn-small btn-danger" onclick="deletePrize(${p.id})">删除</button>
+                    </div>
+                `).join('');
+                
+            } catch (err) {
+                console.error('加载奖品失败:', err);
+            }
+        }
+        
+        async function addPrize() {
+            const roundId = parseInt(document.getElementById('prizeRoundSelect').value);
+            const name = document.getElementById('newPrizeName').value.trim();
+            const count = parseInt(document.getElementById('newPrizeCount').value) || 1;
+            
+            if (!roundId || !name) {
+                alert('请选择轮次并输入奖品名称');
+                return;
+            }
+            
+            try {
+                const { count: maxOrder } = await supabase
+                    .from('prizes')
+                    .select('sort_order', { count: 'exact', head: true })
+                    .eq('round_id', roundId);
+                
+                await supabase.from('prizes').insert({
+                    round_id: roundId,
+                    name: name,
+                    count: count,
+                    sort_order: (maxOrder || 0) + 1
+                });
+                
+                document.getElementById('newPrizeName').value = '';
+                document.getElementById('newPrizeCount').value = '1';
+                
+                loadPrizesForRound();
+                if (currentRound && roundId === currentRound.id) {
+                    await loadCurrentRound();
+                }
+                
+            } catch (err) {
+                console.error('添加奖品失败:', err);
+                alert('添加失败');
+            }
+        }
+        
+        async function deletePrize(id) {
+            if (!confirm('确定删除这个奖品吗？')) return;
+            
+            try {
+                await supabase.from('prizes').delete().eq('id', id);
+                loadPrizesForRound();
+                if (currentRound) await loadCurrentRound();
+            } catch (err) {
+                console.error('删除奖品失败:', err);
+            }
+        }
+        
+        // ==================== 数据管理 ====================
+        async function updateDataStats() {
+            try {
+                const { count: rCount } = await supabase.from('rounds').select('*', { count: 'exact', head: true });
+                const { count: pCount } = await supabase.from('participants').select('*', { count: 'exact', head: true });
+                const { count: wCount } = await supabase.from('winners').select('*', { count: 'exact', head: true });
+                
+                document.getElementById('statRounds').textContent = rCount || 0;
+                document.getElementById('statTotalParticipants').textContent = pCount || 0;
+                document.getElementById('statTotalWinners').textContent = wCount || 0;
+                
+            } catch (err) {
+                console.error('更新统计失败:', err);
+            }
+        }
+        
+        async function exportData() {
+            try {
+                const { data: winners } = await supabase
+                    .from('winners')
+                    .select('*, rounds(name)')
+                    .order('drawn_at', { ascending: true });
+                
+                if (!winners || winners.length === 0) {
+                    alert('暂无数据');
+                    return;
+                }
+                
+                let csv = '\uFEFF轮次,姓名,编号,奖品,中奖时间\n';
+                winners.forEach(w => {
+                    csv += `${w.rounds?.name || '-'},${w.name},${w.code},${w.prize_name},${new Date(w.drawn_at).toLocaleString()}\n`;
+                });
+                
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `抽奖数据_${new Date().toISOString().slice(0,10)}.csv`;
+                link.click();
+                
+            } catch (err) {
+                console.error('导出失败:', err);
+                alert('导出失败');
+            }
+        }
+        
+        async function resetAll() {
+            if (!confirm('⚠️ 确定要重置所有数据吗？所有轮次、参与者、奖品、中奖记录将被清空！')) return;
+            if (!confirm('⚠️ 再次确认：此操作不可恢复！')) return;
+            if (!confirm('⚠️ 最后确认：确定清空所有数据？')) return;
+            
+            try {
+                await supabase.from('winners').delete().neq('id', 0);
+                await supabase.from('round_participants').delete().neq('id', 0);
+                await supabase.from('prizes').delete().neq('id', 0);
+                await supabase.from('participants').delete().neq('id', 0);
+                await supabase.from('rounds').delete().neq('id', 0);
+                
+                // 创建默认轮次
+                const { data: round } = await supabase
+                    .from('rounds')
+                    .insert({ name: '第一轮', status: 'joining' })
+                    .select()
+                    .single();
+                
+                await supabase.from('prizes').insert([
+                    { round_id: round.id, name: '🎁 特等奖', count: 1, sort_order: 1 },
+                    { round_id: round.id, name: '🥇 一等奖', count: 3, sort_order: 2 },
+                    { round_id: round.id, name: '🥈 二等奖', count: 5, sort_order: 3 }
+                ]);
+                
+                currentRound = round;
+                currentParticipants = [];
+                currentPrizes = [];
+                selectedPrize = null;
+                
+                await loadCurrentRound();
+                await loadWinners();
+                updateStats();
+                updateDataStats();
+                loadRoundsList();
+                loadPrizesForRound();
+                
+                document.getElementById('currentPrize').textContent = '准备抽取奖品...';
+                document.getElementById('winnerDisplay').classList.remove('show');
+                document.getElementById('rollingArea').style.display = 'flex';
+                document.getElementById('rollingName').textContent = '???';
+                
+                alert('数据已重置！');
+                
+            } catch (err) {
+                console.error('重置失败:', err);
+                alert('重置失败');
+            }
+        }
         
         // ==================== 初始化 ====================
         init();
         
+        // 定时同步
+        setInterval(async () => {
+            await loadParticipants();
+            await loadWinners();
+            updateStats();
+        }, 3000);
+        
         // 点击弹窗外部关闭
         document.getElementById('settingsModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeSettings();
-            }
+            if (e.target === this) closeSettings();
         });
     </script>
 </body>
