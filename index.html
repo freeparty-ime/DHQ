@@ -104,7 +104,7 @@
         <h1>🎉 幸运大抽奖</h1>
         <p>现场抽奖，公平公开</p>
     </div>
-    
+
     <div class="container">
         <div class="stats">
             <div class="stat-item">
@@ -116,18 +116,18 @@
                 <div class="stat-label">奖品数</div>
             </div>
         </div>
-        
+
         <div id="loadingArea" class="loading">
             <div class="loading-spinner"></div>
             <p>加载中...</p>
         </div>
-        
+
         <div id="contentArea" style="display:none;">
             <div class="round-info" id="roundInfo">
                 <div class="round-name" id="roundName">-</div>
                 <div class="round-status" id="roundStatus">-</div>
             </div>
-            
+
             <div id="joinForm">
                 <div class="form-card">
                     <div class="form-title">📝 填写信息参与抽奖</div>
@@ -144,7 +144,7 @@
                     </button>
                 </div>
             </div>
-            
+
             <div id="successCard" style="display:none;">
                 <div class="form-card fade-in">
                     <div class="success-card">
@@ -158,7 +158,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div id="errorCard" style="display:none;">
                 <div class="form-card fade-in">
                     <div class="error-card">
@@ -170,23 +170,24 @@
             </div>
         </div>
     </div>
-    
+
     <div class="footer">
         <p>幸运抽奖系统 · 公平公正公开</p>
     </div>
 
     <script>
-        // ==================== Supabase 配置（需要替换） ====================
+        // ==================== Supabase 配置 ====================
         const SUPABASE_URL = 'https://ygtkvdnholbveneqnnqs.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_SHIIuCLyOprII4194oE0Rg_SbtTfmFs';
-        
-        // 初始化 Supabase
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
+
+        // 初始化 Supabase（避免变量名冲突）
+        const { createClient } = window.supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
         // ==================== 全局状态 ====================
         let currentRound = null;
         let currentPrizes = [];
-        
+
         // ==================== 获取设备ID ====================
         function getDeviceId() {
             let id = localStorage.getItem('lucky_draw_device_id');
@@ -196,54 +197,54 @@
             }
             return id;
         }
-        
+
         // ==================== 初始化 ====================
         async function init() {
             try {
                 // 获取当前轮次
-                const { data: rounds, error: roundError } = await supabase
+                const { data: rounds, error: roundError } = await db
                     .from('rounds')
                     .select('*')
                     .neq('status', 'finished')
                     .order('created_at', { ascending: false })
                     .limit(1);
-                
+
                 if (roundError) throw roundError;
-                
+
                 if (!rounds || rounds.length === 0) {
                     showError('暂无进行中的抽奖轮次', '请等待管理员开启新的抽奖轮次');
                     return;
                 }
-                
+
                 currentRound = rounds[0];
-                
+
                 // 获取奖品
-                const { data: prizes, error: prizeError } = await supabase
+                const { data: prizes, error: prizeError } = await db
                     .from('prizes')
                     .select('*')
                     .eq('round_id', currentRound.id)
                     .order('sort_order', { ascending: true });
-                
+
                 if (prizeError) throw prizeError;
                 currentPrizes = prizes || [];
-                
+
                 // 更新显示
                 updateRoundInfo();
                 await updateStats();
-                
+
                 // 检查是否已报名
                 await checkJoined();
-                
+
                 // 显示内容
                 document.getElementById('loadingArea').style.display = 'none';
                 document.getElementById('contentArea').style.display = 'block';
-                
+
             } catch (err) {
                 console.error('初始化失败:', err);
                 showError('加载失败', '请检查网络连接或刷新页面重试');
             }
         }
-        
+
         // ==================== 更新轮次信息 ====================
         function updateRoundInfo() {
             if (!currentRound) return;
@@ -251,133 +252,133 @@
             const statusMap = { joining: '正在报名', drawing: '正在抽奖', finished: '已结束' };
             document.getElementById('roundStatus').textContent = statusMap[currentRound.status] || currentRound.status;
         }
-        
+
         // ==================== 更新统计 ====================
         async function updateStats() {
             if (!currentRound) return;
-            
+
             try {
                 // 报名人数
-                const { count: participantCount } = await supabase
+                const { count: participantCount } = await db
                     .from('round_participants')
                     .select('*', { count: 'exact', head: true })
                     .eq('round_id', currentRound.id);
-                
+
                 document.getElementById('participantCount').textContent = participantCount || 0;
-                
-                // 奖品数
+
+                // 奖品数（使用 count 字段）
                 const totalPrizes = currentPrizes.reduce((sum, p) => sum + (parseInt(p.count) || 0), 0);
                 document.getElementById('prizeCount').textContent = totalPrizes;
-                
+
             } catch (err) {
                 console.error('更新统计失败:', err);
             }
         }
-        
+
         // ==================== 检查是否已报名 ====================
         async function checkJoined() {
             if (!currentRound) return;
-            
+
             const deviceId = getDeviceId();
-            
+
             try {
                 // 查找该设备是否已报名当前轮次
-                const { data: existing, error } = await supabase
+                const { data: existing, error } = await db
                     .from('round_participants')
                     .select('*, participants(*)')
                     .eq('round_id', currentRound.id)
                     .eq('participants.device_id', deviceId);
-                
+
                 if (error) throw error;
-                
+
                 if (existing && existing.length > 0) {
                     showSuccess(existing[0].participants.code);
                     return;
                 }
-                
+
                 // 检查是否中过奖（如果设置了排除）
                 if (currentRound.exclude_previous_winners) {
-                    const { data: wonBefore } = await supabase
+                    const { data: wonBefore } = await db
                         .from('participants')
                         .select('*')
                         .eq('device_id', deviceId)
                         .eq('has_won', true)
                         .single();
-                    
+
                     if (wonBefore) {
                         showError('您已中奖', '根据本轮设置，已中奖者不能参与后续轮次');
                         return;
                     }
                 }
-                
+
             } catch (err) {
                 console.error('检查报名状态失败:', err);
             }
         }
-        
+
         // ==================== 报名参与 ====================
         async function joinDraw() {
             const name = document.getElementById('userName').value.trim();
             const phone = document.getElementById('userPhone').value.trim();
-            
+
             if (!name) {
                 alert('请输入您的姓名！');
                 return;
             }
-            
+
             if (!currentRound) {
                 alert('暂无进行中的抽奖轮次！');
                 return;
             }
-            
+
             if (currentRound.status !== 'joining') {
                 alert('当前轮次不在报名阶段！');
                 return;
             }
-            
+
             const deviceId = getDeviceId();
             const btn = document.getElementById('joinBtn');
             btn.disabled = true;
             btn.textContent = '报名中...';
-            
+
             try {
                 // 检查是否已报名
-                const { data: existing } = await supabase
+                const { data: existing } = await db
                     .from('round_participants')
                     .select('*, participants(*)')
                     .eq('round_id', currentRound.id)
                     .eq('participants.device_id', deviceId);
-                
+
                 if (existing && existing.length > 0) {
                     showSuccess(existing[0].participants.code);
                     return;
                 }
-                
+
                 // 检查是否中过奖
                 if (currentRound.exclude_previous_winners) {
-                    const { data: wonBefore } = await supabase
+                    const { data: wonBefore } = await db
                         .from('participants')
                         .select('*')
                         .eq('device_id', deviceId)
                         .eq('has_won', true)
                         .single();
-                    
+
                     if (wonBefore) {
                         showError('您已中奖', '根据本轮设置，已中奖者不能参与后续轮次');
                         return;
                     }
                 }
-                
+
                 // 生成编号
-                const { count } = await supabase
+                const { count } = await db
                     .from('round_participants')
                     .select('*', { count: 'exact', head: true })
                     .eq('round_id', currentRound.id);
-                
+
                 const code = 'A' + String((count || 0) + 1).padStart(3, '0');
-                
+
                 // 创建参与者
-                const { data: participant, error: pError } = await supabase
+                const { data: participant, error: pError } = await db
                     .from('participants')
                     .insert({
                         device_id: deviceId,
@@ -387,22 +388,22 @@
                     })
                     .select()
                     .single();
-                
+
                 if (pError) throw pError;
-                
+
                 // 创建轮次报名记录
-                const { error: rpError } = await supabase
+                const { error: rpError } = await db
                     .from('round_participants')
                     .insert({
                         round_id: currentRound.id,
                         participant_id: participant.id
                     });
-                
+
                 if (rpError) throw rpError;
-                
+
                 showSuccess(code);
                 await updateStats();
-                
+
             } catch (err) {
                 console.error('报名失败:', err);
                 alert('报名失败，请重试！');
@@ -410,7 +411,7 @@
                 btn.textContent = '🎯 立即报名参与';
             }
         }
-        
+
         // ==================== 显示成功 ====================
         function showSuccess(code) {
             document.getElementById('joinForm').style.display = 'none';
@@ -418,7 +419,7 @@
             document.getElementById('successCard').style.display = 'block';
             document.getElementById('userCode').textContent = code;
         }
-        
+
         // ==================== 显示错误 ====================
         function showError(title, text) {
             document.getElementById('loadingArea').style.display = 'none';
@@ -429,10 +430,10 @@
             document.getElementById('errorTitle').textContent = title;
             document.getElementById('errorText').textContent = text;
         }
-        
+
         // ==================== 初始化 ====================
         init();
-        
+
         // 定时更新统计
         setInterval(updateStats, 3000);
     </script>

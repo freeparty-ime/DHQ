@@ -264,51 +264,51 @@
             </div>
         </div>
     </div>
-    
+
     <div class="main">
         <div class="main-title">🎊 幸运大抽奖</div>
         <div class="sub-title" id="currentPrize">准备抽取奖品...</div>
-        
+
         <div class="rolling-area" id="rollingArea">
             <div class="rolling-name" id="rollingName">???</div>
         </div>
-        
+
         <div class="winner-display" id="winnerDisplay">
             <div class="winner-label">🎉 恭喜中奖 🎉</div>
             <div class="winner-name" id="winnerName">-</div>
             <div class="winner-code" id="winnerCode">-</div>
         </div>
-        
+
         <div class="controls" id="controls">
             <button class="btn btn-start" id="startBtn" onclick="startRolling()">▶ 开始滚动</button>
             <button class="btn btn-stop" id="stopBtn" onclick="stopRolling()" disabled>⏹ 停止抽奖</button>
         </div>
-        
+
         <div class="prize-info" id="prizeInfo"></div>
     </div>
-    
+
     <div class="winners-list" id="winnersList">
         <h3>🏆 中奖名单</h3>
         <div id="winnersListContent">
             <div class="empty-state">暂无中奖者</div>
         </div>
     </div>
-    
+
     <button class="settings-btn" onclick="showSettings()">⚙️ 设置</button>
-    
+
     <div class="modal" id="settingsModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>⚙️ 抽奖设置</h3>
                 <button class="btn-close" onclick="closeSettings()">&times;</button>
             </div>
-            
+
             <div class="tab-bar">
                 <button class="tab active" onclick="switchTab('rounds')">轮次管理</button>
                 <button class="tab" onclick="switchTab('prizes')">奖品设置</button>
                 <button class="tab" onclick="switchTab('data')">数据管理</button>
             </div>
-            
+
             <div class="tab-content show" id="tab-rounds">
                 <div class="form-group">
                     <label>创建新轮次</label>
@@ -320,10 +320,10 @@
                     </label>
                 </div>
                 <button class="btn btn-add" style="width:100%;margin-bottom:16px;" onclick="createRound()">创建轮次</button>
-                
+
                 <div class="round-list" id="roundList"></div>
             </div>
-            
+
             <div class="tab-content" id="tab-prizes">
                 <div class="form-group">
                     <label>当前轮次</label>
@@ -339,7 +339,7 @@
                 </div>
                 <div id="prizesListAdmin"></div>
             </div>
-            
+
             <div class="tab-content" id="tab-data">
                 <div class="form-group">
                     <label>统计信息</label>
@@ -356,12 +356,14 @@
     </div>
 
     <script>
-        // ==================== Supabase 配置（需要替换） ====================
+        // ==================== Supabase 配置 ====================
         const SUPABASE_URL = 'https://ygtkvdnholbveneqnnqs.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_SHIIuCLyOprII4194oE0Rg_SbtTfmFs';
-        
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
+
+        // 初始化 Supabase（避免变量名冲突）
+        const { createClient } = window.supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
         // ==================== 全局状态 ====================
         let isRolling = false;
         let rollInterval = null;
@@ -369,7 +371,7 @@
         let currentParticipants = [];
         let currentPrizes = [];
         let selectedPrize = null;
-        
+
         // ==================== 初始化 ====================
         async function init() {
             await loadCurrentRound();
@@ -377,34 +379,34 @@
             await loadWinners();
             updateStats();
         }
-        
+
         // ==================== 加载当前轮次 ====================
         async function loadCurrentRound() {
             try {
-                const { data: rounds, error } = await supabase
+                const { data: rounds, error } = await db
                     .from('rounds')
                     .select('*')
                     .neq('status', 'finished')
                     .order('created_at', { ascending: false })
                     .limit(1);
-                
+
                 if (error) throw error;
-                
+
                 if (rounds && rounds.length > 0) {
                     currentRound = rounds[0];
                     document.getElementById('currentPrize').textContent = `当前轮次: ${currentRound.name}`;
-                    
+
                     // 加载奖品
-                    const { data: prizes } = await supabase
+                    const { data: prizes } = await db
                         .from('prizes')
                         .select('*')
                         .eq('round_id', currentRound.id)
                         .order('sort_order', { ascending: true });
-                    
+
                     currentPrizes = prizes || [];
-                    
-                    // 自动选择第一个未抽完的奖品
-                    const availablePrize = currentPrizes.find(p => p.drawn < p.count);
+
+                    // 自动选择第一个未抽完的奖品（使用 remaining_count 字段）
+                    const availablePrize = currentPrizes.find(p => p.remaining_count > 0);
                     if (availablePrize) {
                         selectedPrize = availablePrize;
                         document.getElementById('currentPrize').textContent = `正在抽取: ${availablePrize.name}`;
@@ -416,108 +418,109 @@
                 console.error('加载轮次失败:', err);
             }
         }
-        
+
         // ==================== 加载参与者 ====================
         async function loadParticipants() {
             if (!currentRound) return;
-            
+
             try {
-                const { data, error } = await supabase
+                const { data, error } = await db
                     .from('round_participants')
                     .select('*, participants(*)')
                     .eq('round_id', currentRound.id);
-                
+
                 if (error) throw error;
                 currentParticipants = data || [];
             } catch (err) {
                 console.error('加载参与者失败:', err);
             }
         }
-        
+
         // ==================== 加载中奖者 ====================
         async function loadWinners() {
             if (!currentRound) return;
-            
+
             try {
-                const { data, error } = await supabase
+                // winners 表没有 name 和 code 字段，需要 join participants 表获取
+                const { data, error } = await db
                     .from('winners')
-                    .select('*')
+                    .select('*, participants(name, code)')
                     .eq('round_id', currentRound.id)
-                    .order('drawn_at', { ascending: false });
-                
+                    .order('won_at', { ascending: false });
+
                 if (error) throw error;
                 updateWinnersList(data || []);
             } catch (err) {
                 console.error('加载中奖者失败:', err);
             }
         }
-        
+
         // ==================== 更新统计 ====================
         async function updateStats() {
             try {
                 // 报名人数
-                const { count: pCount } = await supabase
+                const { count: pCount } = await db
                     .from('round_participants')
                     .select('*', { count: 'exact', head: true })
                     .eq('round_id', currentRound?.id || 0);
-                
+
                 document.getElementById('totalParticipants').textContent = pCount || 0;
-                
+
                 // 中奖人数
-                const { count: wCount } = await supabase
+                const { count: wCount } = await db
                     .from('winners')
                     .select('*', { count: 'exact', head: true })
                     .eq('round_id', currentRound?.id || 0);
-                
+
                 document.getElementById('totalWinners').textContent = wCount || 0;
-                
-                // 剩余奖品
-                const remaining = currentPrizes.reduce((sum, p) => sum + (p.count - p.drawn), 0);
+
+                // 剩余奖品（使用 remaining_count 字段）
+                const remaining = currentPrizes.reduce((sum, p) => sum + (parseInt(p.remaining_count) || 0), 0);
                 document.getElementById('remainingPrizes').textContent = remaining;
-                
+
             } catch (err) {
                 console.error('更新统计失败:', err);
             }
         }
-        
+
         // ==================== 开始滚动 ====================
         async function startRolling() {
             if (!currentRound) {
                 alert('请先创建轮次！');
                 return;
             }
-            
-            if (!selectedPrize || selectedPrize.drawn >= selectedPrize.count) {
+
+            if (!selectedPrize || selectedPrize.remaining_count <= 0) {
                 alert('请先在设置中选择奖品！');
                 showSettings();
                 return;
             }
-            
+
             // 重新加载参与者
             await loadParticipants();
-            
+
             // 获取未中奖的参与者
-            const { data: winners } = await supabase
+            const { data: winners } = await db
                 .from('winners')
                 .select('participant_id')
                 .eq('round_id', currentRound.id);
-            
+
             const winnerIds = (winners || []).map(w => w.participant_id);
             const available = currentParticipants.filter(p => !winnerIds.includes(p.participant_id));
-            
+
             if (available.length === 0) {
                 alert('没有可抽奖的参与者！');
                 return;
             }
-            
+
             isRolling = true;
-            
+
             document.getElementById('winnerDisplay').classList.remove('show');
             document.getElementById('rollingArea').style.display = 'flex';
             document.getElementById('rollingName').classList.remove('stopped');
             document.getElementById('startBtn').disabled = true;
             document.getElementById('stopBtn').disabled = false;
-            
+
             let index = 0;
             rollInterval = setInterval(() => {
                 const name = available[index % available.length].participants.name;
@@ -525,68 +528,66 @@
                 index++;
             }, 80);
         }
-        
+
         // ==================== 停止滚动 ====================
         async function stopRolling() {
             if (!isRolling) return;
-            
+
             isRolling = false;
             clearInterval(rollInterval);
-            
+
             // 获取未中奖的参与者
-            const { data: winners } = await supabase
+            const { data: winners } = await db
                 .from('winners')
                 .select('participant_id')
                 .eq('round_id', currentRound.id);
-            
+
             const winnerIds = (winners || []).map(w => w.participant_id);
             const available = currentParticipants.filter(p => !winnerIds.includes(p.participant_id));
-            
+
             if (available.length === 0) return;
-            
+
             // 随机选择
             const winnerIndex = Math.floor(Math.random() * available.length);
             const selected = available[winnerIndex];
-            
+
             document.getElementById('rollingName').classList.add('stopped');
             document.getElementById('rollingName').textContent = selected.participants.name;
-            
+
             setTimeout(async () => {
                 document.getElementById('rollingArea').style.display = 'none';
                 document.getElementById('winnerDisplay').classList.add('show');
                 document.getElementById('winnerName').textContent = selected.participants.name;
                 document.getElementById('winnerCode').textContent = '编号: ' + selected.participants.code;
-                
+
                 createConfetti();
-                
-                // 保存中奖记录
-                await supabase.from('winners').insert({
+
+                // 保存中奖记录（winners 表没有 name 和 code 字段，只有 prize_name）
+                await db.from('winners').insert({
                     round_id: currentRound.id,
                     participant_id: selected.participant_id,
-                    name: selected.participants.name,
-                    code: selected.participants.code,
                     prize_id: selectedPrize.id,
                     prize_name: selectedPrize.name
                 });
-                
-                // 更新奖品已抽数量
-                await supabase
+
+                // 更新奖品剩余数量（使用 remaining_count 字段）
+                await db
                     .from('prizes')
-                    .update({ drawn: selectedPrize.drawn + 1 })
+                    .update({ remaining_count: selectedPrize.remaining_count - 1 })
                     .eq('id', selectedPrize.id);
-                
+
                 // 标记参与者已中奖
-                await supabase
+                await db
                     .from('participants')
                     .update({ has_won: true })
                     .eq('id', selected.participant_id);
-                
-                // 更新当前奖品
-                selectedPrize.drawn++;
-                
+
+                // 更新当前奖品（使用 remaining_count 字段）
+                selectedPrize.remaining_count--;
+
                 // 检查是否还有剩余
-                if (selectedPrize.drawn >= selectedPrize.count) {
-                    const nextPrize = currentPrizes.find(p => p.drawn < p.count);
+                if (selectedPrize.remaining_count <= 0) {
+                    const nextPrize = currentPrizes.find(p => p.remaining_count > 0);
                     if (nextPrize) {
                         selectedPrize = nextPrize;
                         document.getElementById('currentPrize').textContent = `正在抽取: ${nextPrize.name}`;
@@ -595,16 +596,16 @@
                         selectedPrize = null;
                     }
                 }
-                
+
                 await loadWinners();
                 await updateStats();
-                
+
                 document.getElementById('startBtn').disabled = false;
                 document.getElementById('stopBtn').disabled = true;
-                
+
             }, 500);
         }
-        
+
         // ==================== 彩带特效 ====================
         function createConfetti() {
             const colors = ['#e94560', '#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4'];
@@ -623,7 +624,7 @@
                 }, i * 30);
             }
         }
-        
+
         // ==================== 更新中奖名单 ====================
         function updateWinnersList(winners) {
             const content = document.getElementById('winnersListContent');
@@ -631,17 +632,22 @@
                 content.innerHTML = '<div class="empty-state">暂无中奖者</div>';
                 return;
             }
-            content.innerHTML = winners.map(w => `
-                <div class="winner-tag">
-                    <div>
-                        <div class="name">${w.name}</div>
-                        <div style="font-size:11px;opacity:0.6;">${w.code}</div>
+            content.innerHTML = winners.map(w => {
+                // 从 join 的 participants 获取 name 和 code
+                const pName = w.participants?.name || '-';
+                const pCode = w.participants?.code || '-';
+                return `
+                    <div class="winner-tag">
+                        <div>
+                            <div class="name">${pName}</div>
+                            <div style="font-size:11px;opacity:0.6;">${pCode}</div>
+                        </div>
+                        <div class="prize">${w.prize_name}</div>
                     </div>
-                    <div class="prize">${w.prize_name}</div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
-        
+
         // ==================== 设置面板 ====================
         function showSettings() {
             document.getElementById('settingsModal').classList.add('show');
@@ -650,34 +656,34 @@
             loadPrizesForRound();
             updateDataStats();
         }
-        
+
         function closeSettings() {
             document.getElementById('settingsModal').classList.remove('show');
         }
-        
+
         function switchTab(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('show'));
             event.target.classList.add('active');
             document.getElementById('tab-' + tab).classList.add('show');
         }
-        
+
         // ==================== 轮次管理 ====================
         async function loadRoundsList() {
             try {
-                const { data, error } = await supabase
+                const { data, error } = await db
                     .from('rounds')
                     .select('*')
                     .order('created_at', { ascending: false });
-                
+
                 if (error) throw error;
-                
+
                 const list = document.getElementById('roundList');
                 if (!data || data.length === 0) {
                     list.innerHTML = '<div class="empty-state">暂无轮次</div>';
                     return;
                 }
-                
+
                 list.innerHTML = data.map(r => {
                     const statusMap = { joining: '报名中', drawing: '抽奖中', finished: '已结束' };
                     const isActive = currentRound && r.id === currentRound.id;
@@ -691,32 +697,32 @@
                         </div>
                     `;
                 }).join('');
-                
+
             } catch (err) {
                 console.error('加载轮次失败:', err);
             }
         }
-        
+
         async function createRound() {
             const name = document.getElementById('newRoundName').value.trim();
             const excludeWinners = document.getElementById('excludeWinners').checked;
-            
+
             if (!name) {
                 alert('请输入轮次名称');
                 return;
             }
-            
+
             try {
                 // 结束当前轮次
                 if (currentRound) {
-                    await supabase
+                    await db
                         .from('rounds')
                         .update({ status: 'finished' })
                         .eq('id', currentRound.id);
                 }
-                
+
                 // 创建新轮次
-                const { data, error } = await supabase
+                const { data, error } = await db
                     .from('rounds')
                     .insert({
                         name: name,
@@ -725,263 +731,273 @@
                     })
                     .select()
                     .single();
-                
+
                 if (error) throw error;
-                
+
                 currentRound = data;
-                
-                // 添加默认奖品
-                await supabase.from('prizes').insert([
-                    { round_id: data.id, name: '🎁 特等奖', count: 1, sort_order: 1 },
-                    { round_id: data.id, name: '🥇 一等奖', count: 3, sort_order: 2 },
-                    { round_id: data.id, name: '🥈 二等奖', count: 5, sort_order: 3 }
+
+                // 添加默认奖品（使用 count 和 remaining_count 字段）
+                await db.from('prizes').insert([
+                    { round_id: data.id, name: '🎁 特等奖', count: 1, remaining_count: 1, sort_order: 1 },
+                    { round_id: data.id, name: '🥇 一等奖', count: 3, remaining_count: 3, sort_order: 2 },
+                    { round_id: data.id, name: '🥈 二等奖', count: 5, remaining_count: 5, sort_order: 3 }
                 ]);
-                
+
                 document.getElementById('newRoundName').value = '';
                 document.getElementById('excludeWinners').checked = false;
-                
+
                 alert('轮次创建成功！');
                 await loadCurrentRound();
                 loadRoundsList();
                 loadPrizeRoundSelect();
                 loadPrizesForRound();
                 updateStats();
-                
+
             } catch (err) {
                 console.error('创建轮次失败:', err);
                 alert('创建失败，请重试');
             }
         }
-        
+
         async function selectRound(roundId) {
             try {
-                const { data, error } = await supabase
+                const { data, error } = await db
                     .from('rounds')
                     .select('*')
                     .eq('id', roundId)
                     .single();
-                
+
                 if (error) throw error;
-                
+
                 currentRound = data;
                 await loadCurrentRound();
                 await loadParticipants();
                 await loadWinners();
                 updateStats();
                 loadRoundsList();
-                
+
                 alert(`已切换到: ${data.name}`);
-                
+
             } catch (err) {
                 console.error('选择轮次失败:', err);
             }
         }
-        
+
         // ==================== 奖品管理 ====================
         async function loadPrizeRoundSelect() {
             try {
-                const { data, error } = await supabase
+                const { data, error } = await db
                     .from('rounds')
                     .select('*')
                     .order('created_at', { ascending: false });
-                
+
                 if (error) throw error;
-                
+
                 const select = document.getElementById('prizeRoundSelect');
-                select.innerHTML = (data || []).map(r => 
+                select.innerHTML = (data || []).map(r =>
                     `<option value="${r.id}" ${currentRound && r.id === currentRound.id ? 'selected' : ''}>${r.name}</option>`
                 ).join('');
-                
+
             } catch (err) {
                 console.error('加载轮次选择失败:', err);
             }
         }
-        
+
         async function loadPrizesForRound() {
             const roundId = parseInt(document.getElementById('prizeRoundSelect').value);
             if (!roundId) return;
-            
+
             try {
-                const { data, error } = await supabase
+                const { data, error } = await db
                     .from('prizes')
                     .select('*')
                     .eq('round_id', roundId)
                     .order('sort_order', { ascending: true });
-                
+
                 if (error) throw error;
-                
+
                 const list = document.getElementById('prizesListAdmin');
                 if (!data || data.length === 0) {
                     list.innerHTML = '<div class="empty-state">暂无奖品</div>';
                     return;
                 }
-                
-                list.innerHTML = data.map(p => `
-                    <div class="prize-item-admin">
-                        <span>${p.name} (${p.drawn}/${p.count})</span>
-                        <button class="btn-small btn-danger" onclick="deletePrize(${p.id})">删除</button>
-                    </div>
-                `).join('');
-                
+
+                // 显示已抽/总数（使用 count 和 remaining_count 计算）
+                list.innerHTML = data.map(p => {
+                    const drawn = p.count - p.remaining_count;
+                    return `
+                        <div class="prize-item-admin">
+                            <span>${p.name} (${drawn}/${p.count})</span>
+                            <button class="btn-small btn-danger" onclick="deletePrize(${p.id})">删除</button>
+                        </div>
+                    `;
+                }).join('');
+
             } catch (err) {
                 console.error('加载奖品失败:', err);
             }
         }
-        
+
         async function addPrize() {
             const roundId = parseInt(document.getElementById('prizeRoundSelect').value);
             const name = document.getElementById('newPrizeName').value.trim();
             const count = parseInt(document.getElementById('newPrizeCount').value) || 1;
-            
+
             if (!roundId || !name) {
                 alert('请选择轮次并输入奖品名称');
                 return;
             }
-            
+
             try {
-                const { count: maxOrder } = await supabase
+                const { count: maxOrder } = await db
                     .from('prizes')
                     .select('sort_order', { count: 'exact', head: true })
                     .eq('round_id', roundId);
-                
-                await supabase.from('prizes').insert({
+
+                await db.from('prizes').insert({
                     round_id: roundId,
                     name: name,
                     count: count,
+                    remaining_count: count,
                     sort_order: (maxOrder || 0) + 1
                 });
-                
+
                 document.getElementById('newPrizeName').value = '';
                 document.getElementById('newPrizeCount').value = '1';
-                
+
                 loadPrizesForRound();
                 if (currentRound && roundId === currentRound.id) {
                     await loadCurrentRound();
                 }
-                
+
             } catch (err) {
                 console.error('添加奖品失败:', err);
                 alert('添加失败');
             }
         }
-        
+
         async function deletePrize(id) {
             if (!confirm('确定删除这个奖品吗？')) return;
-            
+
             try {
-                await supabase.from('prizes').delete().eq('id', id);
+                await db.from('prizes').delete().eq('id', id);
                 loadPrizesForRound();
                 if (currentRound) await loadCurrentRound();
             } catch (err) {
                 console.error('删除奖品失败:', err);
             }
         }
-        
+
         // ==================== 数据管理 ====================
         async function updateDataStats() {
             try {
-                const { count: rCount } = await supabase.from('rounds').select('*', { count: 'exact', head: true });
-                const { count: pCount } = await supabase.from('participants').select('*', { count: 'exact', head: true });
-                const { count: wCount } = await supabase.from('winners').select('*', { count: 'exact', head: true });
-                
+                const { count: rCount } = await db.from('rounds').select('*', { count: 'exact', head: true });
+                const { count: pCount } = await db.from('participants').select('*', { count: 'exact', head: true });
+                const { count: wCount } = await db.from('winners').select('*', { count: 'exact', head: true });
+
                 document.getElementById('statRounds').textContent = rCount || 0;
                 document.getElementById('statTotalParticipants').textContent = pCount || 0;
                 document.getElementById('statTotalWinners').textContent = wCount || 0;
-                
+
             } catch (err) {
                 console.error('更新统计失败:', err);
             }
         }
-        
+
         async function exportData() {
             try {
-                const { data: winners } = await supabase
+                // winners 表没有 name 和 code，需要 join participants 和 rounds 获取
+                const { data: winners } = await db
                     .from('winners')
-                    .select('*, rounds(name)')
-                    .order('drawn_at', { ascending: true });
-                
+                    .select('*, participants(name, code), rounds(name)')
+                    .order('won_at', { ascending: true });
+
                 if (!winners || winners.length === 0) {
                     alert('暂无数据');
                     return;
                 }
-                
+
                 let csv = '\uFEFF轮次,姓名,编号,奖品,中奖时间\n';
                 winners.forEach(w => {
-                    csv += `${w.rounds?.name || '-'},${w.name},${w.code},${w.prize_name},${new Date(w.drawn_at).toLocaleString()}\n`;
+                    const pName = w.participants?.name || '-';
+                    const pCode = w.participants?.code || '-';
+                    const rName = w.rounds?.name || '-';
+                    csv += `${rName},${pName},${pCode},${w.prize_name},${new Date(w.won_at).toLocaleString()}\n`;
                 });
-                
+
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
                 link.download = `抽奖数据_${new Date().toISOString().slice(0,10)}.csv`;
                 link.click();
-                
+
             } catch (err) {
                 console.error('导出失败:', err);
                 alert('导出失败');
             }
         }
-        
+
         async function resetAll() {
             if (!confirm('⚠️ 确定要重置所有数据吗？所有轮次、参与者、奖品、中奖记录将被清空！')) return;
             if (!confirm('⚠️ 再次确认：此操作不可恢复！')) return;
             if (!confirm('⚠️ 最后确认：确定清空所有数据？')) return;
-            
+
             try {
-                await supabase.from('winners').delete().neq('id', 0);
-                await supabase.from('round_participants').delete().neq('id', 0);
-                await supabase.from('prizes').delete().neq('id', 0);
-                await supabase.from('participants').delete().neq('id', 0);
-                await supabase.from('rounds').delete().neq('id', 0);
-                
+                await db.from('winners').delete().neq('id', 0);
+                await db.from('round_participants').delete().neq('id', 0);
+                await db.from('prizes').delete().neq('id', 0);
+                await db.from('participants').delete().neq('id', 0);
+                await db.from('rounds').delete().neq('id', 0);
+
                 // 创建默认轮次
-                const { data: round } = await supabase
+                const { data: round } = await db
                     .from('rounds')
                     .insert({ name: '第一轮', status: 'joining' })
                     .select()
                     .single();
-                
-                await supabase.from('prizes').insert([
-                    { round_id: round.id, name: '🎁 特等奖', count: 1, sort_order: 1 },
-                    { round_id: round.id, name: '🥇 一等奖', count: 3, sort_order: 2 },
-                    { round_id: round.id, name: '🥈 二等奖', count: 5, sort_order: 3 }
+
+                // 使用 count 和 remaining_count 字段
+                await db.from('prizes').insert([
+                    { round_id: round.id, name: '🎁 特等奖', count: 1, remaining_count: 1, sort_order: 1 },
+                    { round_id: round.id, name: '🥇 一等奖', count: 3, remaining_count: 3, sort_order: 2 },
+                    { round_id: round.id, name: '🥈 二等奖', count: 5, remaining_count: 5, sort_order: 3 }
                 ]);
-                
+
                 currentRound = round;
                 currentParticipants = [];
                 currentPrizes = [];
                 selectedPrize = null;
-                
+
                 await loadCurrentRound();
                 await loadWinners();
                 updateStats();
                 updateDataStats();
                 loadRoundsList();
                 loadPrizesForRound();
-                
+
                 document.getElementById('currentPrize').textContent = '准备抽取奖品...';
                 document.getElementById('winnerDisplay').classList.remove('show');
                 document.getElementById('rollingArea').style.display = 'flex';
                 document.getElementById('rollingName').textContent = '???';
-                
+
                 alert('数据已重置！');
-                
+
             } catch (err) {
                 console.error('重置失败:', err);
                 alert('重置失败');
             }
         }
-        
+
         // ==================== 初始化 ====================
         init();
-        
-        // 定时同步
+
+        // 定时同步（每3秒）
         setInterval(async () => {
             await loadParticipants();
             await loadWinners();
             updateStats();
         }, 3000);
-        
+
         // 点击弹窗外部关闭
         document.getElementById('settingsModal').addEventListener('click', function(e) {
             if (e.target === this) closeSettings();
