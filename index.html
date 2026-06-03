@@ -278,107 +278,119 @@
         // ==================== 检查是否已报名 ====================
         async function checkJoined() {
             if (!currentRound) return;
-
+            
             const deviceId = getDeviceId();
-
+            
             try {
-                // 查找该设备是否已报名当前轮次
-                const { data: existing, error } = await db
-                    .from('round_participants')
-                    .select('*, participants(*)')
-                    .eq('round_id', currentRound.id)
-                    .eq('participants.device_id', deviceId);
-
-                if (error) throw error;
-
-                if (existing && existing.length > 0) {
-                    showSuccess(existing[0].participants.code);
-                    return;
-                }
-
-                // 检查是否中过奖（如果设置了排除）
-                if (currentRound.exclude_previous_winners) {
-                    const { data: wonBefore } = await db
-                        .from('participants')
+                // 先查找该设备的参与者记录
+                const { data: myParticipants, error: pError } = await db
+                    .from('participants')
+                    .select('*')
+                    .eq('device_id', deviceId);
+                
+                if (pError) throw pError;
+                
+                // 检查是否已报名当前轮次
+                if (myParticipants && myParticipants.length > 0) {
+                    const myIds = myParticipants.map(p => p.id);
+                    const { data: existing, error: rpError } = await db
+                        .from('round_participants')
                         .select('*')
-                        .eq('device_id', deviceId)
-                        .eq('has_won', true)
-                        .single();
-
-                    if (wonBefore) {
-                        showError('您已中奖', '根据本轮设置，已中奖者不能参与后续轮次');
+                        .eq('round_id', currentRound.id)
+                        .in('participant_id', myIds);
+                    
+                    if (rpError) throw rpError;
+                    
+                    if (existing && existing.length > 0) {
+                        const myCode = myParticipants.find(p => p.id === existing[0].participant_id)?.code;
+                        showSuccess(myCode || '已报名');
                         return;
                     }
+                    
+                    // 检查是否中过奖（如果设置了排除）
+                    if (currentRound.exclude_previous_winners) {
+                        const hasWon = myParticipants.some(p => p.has_won);
+                        if (hasWon) {
+                            showError('您已中奖', '根据本轮设置，已中奖者不能参与后续轮次');
+                            return;
+                        }
+                    }
                 }
-
+                
             } catch (err) {
                 console.error('检查报名状态失败:', err);
             }
         }
-
+        
         // ==================== 报名参与 ====================
         async function joinDraw() {
             const name = document.getElementById('userName').value.trim();
             const phone = document.getElementById('userPhone').value.trim();
-
+            
             if (!name) {
                 alert('请输入您的姓名！');
                 return;
             }
-
+            
             if (!currentRound) {
                 alert('暂无进行中的抽奖轮次！');
                 return;
             }
-
+            
             if (currentRound.status !== 'joining') {
                 alert('当前轮次不在报名阶段！');
                 return;
             }
-
+            
             const deviceId = getDeviceId();
             const btn = document.getElementById('joinBtn');
             btn.disabled = true;
             btn.textContent = '报名中...';
-
+            
             try {
-                // 检查是否已报名
-                const { data: existing } = await db
-                    .from('round_participants')
-                    .select('*, participants(*)')
-                    .eq('round_id', currentRound.id)
-                    .eq('participants.device_id', deviceId);
-
-                if (existing && existing.length > 0) {
-                    showSuccess(existing[0].participants.code);
-                    return;
-                }
-
-                // 检查是否中过奖
-                if (currentRound.exclude_previous_winners) {
-                    const { data: wonBefore } = await db
-                        .from('participants')
+                // 先查找该设备的参与者记录
+                const { data: myParticipants, error: pError } = await db
+                    .from('participants')
+                    .select('*')
+                    .eq('device_id', deviceId);
+                
+                if (pError) throw pError;
+                
+                // 检查是否已报名当前轮次
+                if (myParticipants && myParticipants.length > 0) {
+                    const myIds = myParticipants.map(p => p.id);
+                    const { data: existing } = await db
+                        .from('round_participants')
                         .select('*')
-                        .eq('device_id', deviceId)
-                        .eq('has_won', true)
-                        .single();
-
-                    if (wonBefore) {
-                        showError('您已中奖', '根据本轮设置，已中奖者不能参与后续轮次');
+                        .eq('round_id', currentRound.id)
+                        .in('participant_id', myIds);
+                    
+                    if (existing && existing.length > 0) {
+                        const myCode = myParticipants.find(p => p.id === existing[0].participant_id)?.code;
+                        showSuccess(myCode || '已报名');
                         return;
                     }
+                    
+                    // 检查是否中过奖
+                    if (currentRound.exclude_previous_winners) {
+                        const hasWon = myParticipants.some(p => p.has_won);
+                        if (hasWon) {
+                            showError('您已中奖', '根据本轮设置，已中奖者不能参与后续轮次');
+                            return;
+                        }
+                    }
                 }
-
+                
                 // 生成编号
                 const { count } = await db
                     .from('round_participants')
                     .select('*', { count: 'exact', head: true })
                     .eq('round_id', currentRound.id);
-
+                
                 const code = 'A' + String((count || 0) + 1).padStart(3, '0');
-
+                
                 // 创建参与者
-                const { data: participant, error: pError } = await db
+                const { data: participant, error: pError2 } = await db
                     .from('participants')
                     .insert({
                         device_id: deviceId,
@@ -388,9 +400,9 @@
                     })
                     .select()
                     .single();
-
-                if (pError) throw pError;
-
+                
+                if (pError2) throw pError2;
+                
                 // 创建轮次报名记录
                 const { error: rpError } = await db
                     .from('round_participants')
@@ -398,15 +410,15 @@
                         round_id: currentRound.id,
                         participant_id: participant.id
                     });
-
+                
                 if (rpError) throw rpError;
-
+                
                 showSuccess(code);
                 await updateStats();
-
+                
             } catch (err) {
                 console.error('报名失败:', err);
-                alert('报名失败，请重试！');
+                alert('报名失败: ' + (err.message || '请重试'));
                 btn.disabled = false;
                 btn.textContent = '🎯 立即报名参与';
             }

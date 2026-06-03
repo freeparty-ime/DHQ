@@ -736,13 +736,6 @@
 
                 currentRound = data;
 
-                // 添加默认奖品（使用 count 和 remaining_count 字段）
-                await db.from('prizes').insert([
-                    { round_id: data.id, name: '🎁 特等奖', count: 1, remaining_count: 1, sort_order: 1 },
-                    { round_id: data.id, name: '🥇 一等奖', count: 3, remaining_count: 3, sort_order: 2 },
-                    { round_id: data.id, name: '🥈 二等奖', count: 5, remaining_count: 5, sort_order: 3 }
-                ]);
-
                 document.getElementById('newRoundName').value = '';
                 document.getElementById('excludeWinners').checked = false;
 
@@ -909,7 +902,7 @@
                 // winners 表没有 name 和 code，需要 join participants 和 rounds 获取
                 const { data: winners } = await db
                     .from('winners')
-                    .select('*, participants(name, code), rounds(name)')
+                    .select('*, participants(name, code, phone), rounds(name)')
                     .order('won_at', { ascending: true });
 
                 if (!winners || winners.length === 0) {
@@ -917,12 +910,13 @@
                     return;
                 }
 
-                let csv = '\uFEFF轮次,姓名,编号,奖品,中奖时间\n';
+                let csv = '\uFEFF轮次,姓名,编号,手机号,奖品,中奖时间\n';
                 winners.forEach(w => {
                     const pName = w.participants?.name || '-';
                     const pCode = w.participants?.code || '-';
+                    const pPhone = w.participants?.phone || '-';
                     const rName = w.rounds?.name || '-';
-                    csv += `${rName},${pName},${pCode},${w.prize_name},${new Date(w.won_at).toLocaleString()}\n`;
+                    csv += `${rName},${pName},${pCode},${pPhone},${w.prize_name},${new Date(w.won_at).toLocaleString()}\n`;
                 });
 
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -955,13 +949,6 @@
                     .insert({ name: '第一轮', status: 'joining' })
                     .select()
                     .single();
-
-                // 使用 count 和 remaining_count 字段
-                await db.from('prizes').insert([
-                    { round_id: round.id, name: '🎁 特等奖', count: 1, remaining_count: 1, sort_order: 1 },
-                    { round_id: round.id, name: '🥇 一等奖', count: 3, remaining_count: 3, sort_order: 2 },
-                    { round_id: round.id, name: '🥈 二等奖', count: 5, remaining_count: 5, sort_order: 3 }
-                ]);
 
                 currentRound = round;
                 currentParticipants = [];
